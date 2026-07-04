@@ -1,0 +1,6 @@
+venv/
+models/
+records.db
+__pycache__/
+*.pyc
+.env
