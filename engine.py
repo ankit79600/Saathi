@@ -43,7 +43,12 @@ def load_model() -> litert_lm.Engine:
         path = _find_model_path()
         for backend in (litert_lm.Backend.GPU(), litert_lm.Backend.CPU()):
             try:
-                _model = litert_lm.Engine(model_path=path, backend=backend)
+                _model = litert_lm.Engine(
+                    model_path=path,
+                    backend=backend,
+                    vision_backend=backend,
+                    audio_backend=backend,
+                )
                 break
             except Exception:
                 if isinstance(backend, litert_lm.Backend.CPU):
