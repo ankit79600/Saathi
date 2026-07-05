@@ -3,8 +3,7 @@ title: Saathi
 emoji: 🩺
 colorFrom: blue
 colorTo: green
-sdk: streamlit
-sdk_version: 1.35.0
+sdk: docker
 app_file: app.py
 pinned: false
 license: apache-2.0
