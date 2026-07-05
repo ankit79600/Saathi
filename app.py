@@ -38,7 +38,8 @@ with tab_vision:
     detail = st.radio("Detail level", ["Fast (captioning)", "High (OCR/documents)"],
                       horizontal=True)
     if img and st.button("Analyse with Gemma"):
-        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
+        suffix = "." + (getattr(img, "name", "image.jpg").rsplit(".", 1)[-1] or "jpg")
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as f:
             f.write(img.getvalue())
             path = f.name
         prompt = (
