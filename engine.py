@@ -9,22 +9,42 @@ import litert_lm
 # Model discovery
 # ---------------------------------------------------------------------------
 
+_HF_REPO = "litert-community/gemma-4-E4B-it-litert-lm"
+
+
 def _find_model_path() -> str:
-    """Return the model path, checking env var first then ./models/."""
+    """Return the model path: env var → ./models/ → auto-download from HF Hub."""
     explicit = os.environ.get("SAATHI_MODEL_PATH")
     if explicit:
         return explicit
+
     base = os.path.dirname(os.path.abspath(__file__))
+    local_dir = os.path.join(base, "models")
+
     candidates = (
-        glob.glob(os.path.join(base, "models", "*.task")) or
-        glob.glob(os.path.join(base, "models", "*.litertlm"))
+        glob.glob(os.path.join(local_dir, "*.task")) or
+        glob.glob(os.path.join(local_dir, "*.litertlm"))
+    )
+    if candidates:
+        return candidates[0]
+
+    # Model not found locally — download from HF Hub (cloud deployment path).
+    # Requires HF_TOKEN env var if the model is gated (Gemma requires license acceptance).
+    print(f"Model not found in {local_dir}. Downloading from {_HF_REPO} …")
+    from huggingface_hub import snapshot_download
+    snapshot_download(
+        repo_id=_HF_REPO,
+        local_dir=local_dir,
+        ignore_patterns=["*.incomplete", "*.lock", "*.ipynb", "notebook*"],
+    )
+    candidates = (
+        glob.glob(os.path.join(local_dir, "*.task")) or
+        glob.glob(os.path.join(local_dir, "*.litertlm"))
     )
     if not candidates:
         raise FileNotFoundError(
-            "No model file found in ./models/.\n"
-            "Download it with:\n"
-            "  huggingface-cli download litert-community/gemma-4-E4B-it-litert-lm "
-            "--local-dir ./models"
+            f"Download from {_HF_REPO} completed but no .litertlm/.task file found. "
+            "Check that you have accepted the Gemma license on huggingface.co."
         )
     return candidates[0]
 
