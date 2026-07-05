@@ -10,15 +10,18 @@ import litert_lm
 # ---------------------------------------------------------------------------
 
 def _find_model_path() -> str:
-    """Return the .task model path, checking env var first then ./models/."""
+    """Return the model path, checking env var first then ./models/."""
     explicit = os.environ.get("SAATHI_MODEL_PATH")
     if explicit:
         return explicit
     base = os.path.dirname(os.path.abspath(__file__))
-    candidates = glob.glob(os.path.join(base, "models", "*.task"))
+    candidates = (
+        glob.glob(os.path.join(base, "models", "*.task")) or
+        glob.glob(os.path.join(base, "models", "*.litertlm"))
+    )
     if not candidates:
         raise FileNotFoundError(
-            "No .task model file found in ./models/.\n"
+            "No model file found in ./models/.\n"
             "Download it with:\n"
             "  huggingface-cli download litert-community/gemma-4-E4B-it-litert-lm "
             "--local-dir ./models"
@@ -33,46 +36,19 @@ def _find_model_path() -> str:
 _model = None
 
 
-def load_model() -> litert_lm.GenAiModel:
-    """Load the model singleton, trying GPU first then falling back to CPU."""
+def load_model() -> litert_lm.Engine:
+    """Load the Engine singleton, trying GPU first then falling back to CPU."""
     global _model
     if _model is None:
         path = _find_model_path()
-        for backend in ("gpu", "cpu"):
+        for backend in (litert_lm.Backend.GPU(), litert_lm.Backend.CPU()):
             try:
-                _model = litert_lm.GenAiModel(model_path=path, backend=backend)
+                _model = litert_lm.Engine(model_path=path, backend=backend)
                 break
             except Exception:
-                if backend == "cpu":
+                if isinstance(backend, litert_lm.Backend.CPU):
                     raise
     return _model
-
-
-# ---------------------------------------------------------------------------
-# Conversation wrapper
-# ---------------------------------------------------------------------------
-
-class _Conversation:
-    """Wraps a litert_lm session with a stable send_message interface."""
-
-    def __init__(self, session) -> None:
-        self._session = session
-
-    def send_message(self, content) -> dict:
-        """Send a message and return {"content": [{"text": "..."}]}."""
-        raw = self._session.send_message(content)
-
-        # Normalise whatever litert_lm returns into the shape app.py expects.
-        if isinstance(raw, dict):
-            return raw
-        if isinstance(raw, str):
-            text = raw
-        elif hasattr(raw, "text"):
-            text = raw.text
-        else:
-            text = str(raw)
-
-        return {"content": [{"text": text}]}
 
 
 # ---------------------------------------------------------------------------
@@ -81,7 +57,7 @@ class _Conversation:
 
 @contextlib.contextmanager
 def new_conversation(tools: list | None = None):
-    """Context manager that yields a Gemma 4 E4B conversation session.
+    """Context manager that yields a Gemma 4 E4B conversation.
 
     Args:
         tools: Optional list of Python callables for function calling.
@@ -96,8 +72,5 @@ def new_conversation(tools: list | None = None):
     """
     model = load_model()
     kwargs = {"tools": tools} if tools else {}
-    session = model.create_session(**kwargs)
-    try:
-        yield _Conversation(session)
-    finally:
-        session.close()
+    convo = model.create_conversation(**kwargs)
+    yield convo
