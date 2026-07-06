@@ -19,11 +19,12 @@ license: apache-2.0
 ![Platform](https://img.shields.io/badge/Platform-Fully_Offline-brightgreen)
 ![License](https://img.shields.io/badge/License-Apache_2.0-lightgrey)
 ![Hackathon](https://img.shields.io/badge/Kaggle-Build_with_Gemma_2026-20BEFF?logo=kaggle)
+[![HF Space](https://img.shields.io/badge/🤗%20HuggingFace-Space-yellow)](https://huggingface.co/spaces/ankit79600/saathi)
 
 **Fully offline triage & documentation aide for rural healthcare workers.**  
 Vision · Voice · Structured records — all on-device via Gemma 4 E4B + LiteRT-LM.
 
-[Demo Video](https://youtu.be/Z1a5H0NCNEY) · [Kaggle Hackathon — Kolkata 2026](#)
+[Live Demo](https://huggingface.co/spaces/ankit79600/saathi) · [Demo Video](https://youtu.be/Z1a5H0NCNEY) · [Kaggle Hackathon — Kolkata 2026](#)
 
 </div>
 
