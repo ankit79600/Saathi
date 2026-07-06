@@ -10,6 +10,9 @@ import litert_lm
 # ---------------------------------------------------------------------------
 
 _HF_REPO = "litert-community/gemma-4-E4B-it-litert-lm"
+# Exact filename of the Linux/Android native model — the repo also ships a
+# *-web.litertlm (WASM/browser) and a *-web.task that both fail on Linux litert-lm.
+_MODEL_FILENAME = "gemma-4-E4B-it.litertlm"
 
 
 def _find_model_path() -> str:
@@ -20,28 +23,26 @@ def _find_model_path() -> str:
 
     base = os.path.dirname(os.path.abspath(__file__))
     local_dir = os.path.join(base, "models")
+    os.makedirs(local_dir, exist_ok=True)
 
-    candidates = glob.glob(os.path.join(local_dir, "*.litertlm"))
+    # Only accept the native device model — skip *-web.* variants (WASM/browser only)
+    candidates = sorted(
+        f for f in glob.glob(os.path.join(local_dir, "*.litertlm"))
+        if "-web" not in os.path.basename(f)
+    )
     if candidates:
         return candidates[0]
 
-    # Model not found locally — download from HF Hub (cloud deployment path).
-    # Requires HF_TOKEN env var if the model is gated (Gemma requires license acceptance).
-    print(f"Model not found in {local_dir}. Downloading from {_HF_REPO} …")
-    from huggingface_hub import snapshot_download
-    snapshot_download(
+    # Download only the specific native model file — avoids pulling web variants.
+    # Requires HF_TOKEN env var (Gemma is gated; accept license on huggingface.co first).
+    print(f"Model not found in {local_dir}. Downloading {_MODEL_FILENAME} from {_HF_REPO} …")
+    from huggingface_hub import hf_hub_download
+    model_path = hf_hub_download(
         repo_id=_HF_REPO,
+        filename=_MODEL_FILENAME,
         local_dir=local_dir,
-        # Skip web/.task format (MediaPipe) and large cache files — only need .litertlm
-        ignore_patterns=["*.task", "*.incomplete", "*.lock", "*.ipynb", "notebook*"],
     )
-    candidates = glob.glob(os.path.join(local_dir, "*.litertlm"))
-    if not candidates:
-        raise FileNotFoundError(
-            f"Download from {_HF_REPO} completed but no .litertlm/.task file found. "
-            "Check that you have accepted the Gemma license on huggingface.co."
-        )
-    return candidates[0]
+    return model_path
 
 
 # ---------------------------------------------------------------------------
