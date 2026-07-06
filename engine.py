@@ -21,10 +21,7 @@ def _find_model_path() -> str:
     base = os.path.dirname(os.path.abspath(__file__))
     local_dir = os.path.join(base, "models")
 
-    candidates = (
-        glob.glob(os.path.join(local_dir, "*.task")) or
-        glob.glob(os.path.join(local_dir, "*.litertlm"))
-    )
+    candidates = glob.glob(os.path.join(local_dir, "*.litertlm"))
     if candidates:
         return candidates[0]
 
@@ -35,12 +32,10 @@ def _find_model_path() -> str:
     snapshot_download(
         repo_id=_HF_REPO,
         local_dir=local_dir,
-        ignore_patterns=["*.incomplete", "*.lock", "*.ipynb", "notebook*"],
+        # Skip web/.task format (MediaPipe) and large cache files — only need .litertlm
+        ignore_patterns=["*.task", "*.incomplete", "*.lock", "*.ipynb", "notebook*"],
     )
-    candidates = (
-        glob.glob(os.path.join(local_dir, "*.task")) or
-        glob.glob(os.path.join(local_dir, "*.litertlm"))
-    )
+    candidates = glob.glob(os.path.join(local_dir, "*.litertlm"))
     if not candidates:
         raise FileNotFoundError(
             f"Download from {_HF_REPO} completed but no .litertlm/.task file found. "
